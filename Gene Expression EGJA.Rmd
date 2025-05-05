@@ -2,7 +2,10 @@
 title: "Gene Expression EGJA"
 author: "Alexis Murillo (for C2PO)"
 date: "2025-05-05"
-output: html_document
+output: 
+  html_document:
+    toc: true
+    toc_float: true
 ---
 <!-- Changing h2 -->
 <style>
@@ -27,9 +30,11 @@ library(EnvStats)
 
 ```
 
-\newline
-\newline
 
+<br> <br>
+```{r }
+
+```
 ## Reading data files
 
 This analysis started with two files. The first one including expression data obtained using the Fluidigm System and the second one including clinical information from these patients. All files can be found in the 'Input files' folder.
@@ -78,7 +83,7 @@ knitr::include_graphics("Results/Housekeeping Profile.png")
 
 ## Session Info 
 
-Saving Session Info and REnv...
+Saving Session Info and R-env...
 
 ```{r, echo=FALSE, warning = FALSE}
 renv::init()
