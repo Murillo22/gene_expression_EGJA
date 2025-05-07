@@ -20,6 +20,8 @@ renv::init()
 renv::install(c('dplyr','tidyverse','EnvStats'))
 ```
 
+# Calling packages and reading input files
+
 ## Calling Required Packages
 
 
@@ -47,13 +49,21 @@ read.csv('Input files/resultados Placa TEG 29_09_23_dXPRESS.csv')->expr_data
 expr_data<-expr_data%>%dplyr::filter(!(Name %in% c("PC 8","PC 9","PC 14",   
                                            "PC 22","PC 30","PC 45",
                                            "PC 63","775", "3014"))) #Excluding cases with neoadjuvancy and CECs
+
+#Formatting all expression values as numeric data
 as.numeric(expr_data$Value)->expr_data$Value
 
 ```
+<br> <br>
+```{r }
+
+```
+# Gene Expression Normalization
 
 ## Subsetting housekeeping genes and showing expression levels
 
-According with an in-parallel analysis ran in [NormFinder](https://www.moma.dk/software/normfinder) through [dXpress app](https://rdcu.be/dpQtN), genes 'A' and 'E' were the most relevant to normalize data. In this plot, their combination is shown as 'norm'
+In this step, we separated data from housekeeping genes in this analysis: A (ACTB), B (B2M), C(GAPDH), D(GUSB), E(HPRT1), F(RPLP0), and G(TFRC).
+According with an in-parallel analysis ran in [NormFinder](https://www.moma.dk/software/normfinder) through [dXpress app](https://rdcu.be/dpQtN), genes 'A' (ACTB) and 'E' (HPRT1) were the most relevant to normalize data. In this plot, their combination is shown as 'norm'
 
 ```{r message=FALSE, warning=FALSE}
 expr_data<-expr_data%>%dplyr::select(-ID)
@@ -80,8 +90,52 @@ dev.off()
 knitr::include_graphics("Results/Housekeeping Profile.png")
 
 ```
+<br> <br>
+```{r }
 
-## Session Info 
+```
+## Normalizing the expression of Target Genes
+Herein, we will normalize Ct values using 'A' (ACTB) and 'E' (HPRT1) genes.
+
+
+```{r }
+norm_data<-expr_data%>%
+  pivot_wider(names_from=Gene,values_from=Value)%>%
+  group_by(Name)%>%
+  mutate(norm=mean(c(A,E)))%>%
+  pivot_longer(!c(Name,norm),names_to="Gene",values_to="Value")%>%
+  group_by(Name)%>%
+  mutate(Value=norm-Value)%>%
+  select(-norm)%>%
+  pivot_wider(names_from=Gene,values_from=Value)%>%
+  select(-A,-B,-C,-D,-E,-F,-G)
+
+# Setting object as data.frame
+data.frame(norm_data)->norm_data
+# Configuring Name of samples as rownames
+norm_data$Name->rownames(norm_data)
+
+png("Results/heatmap_data_norm.png",width=4000,height = 4000,res=600)
+heatmap(as.matrix(norm_data[,-1]))
+dev.off()
+```
+In this moment, we have expression data of  **`r ncol(norm_data[,-1])` genes from  `r nrow(norm_data[,-1])` patients.**
+<br> 
+```{r }
+
+```
+```{r echo=FALSE }
+
+knitr::include_graphics("Results/heatmap_data_norm.png")
+
+```
+
+
+<br> <br>
+```{r }
+
+```
+# Session Info 
 
 Saving Session Info and R-env...
 

@@ -33,7 +33,7 @@ p
 dev.off()
 
 
-dados_norm<-dados%>%
+dados_norm<-expr_data%>%
   pivot_wider(names_from=Gene,values_from=Value)%>%
   group_by(Name)%>%
   mutate(norm=mean(c(A,E)))%>%
@@ -48,7 +48,7 @@ dados_norm$Name->rownames(dados_norm)
 png("Resultados/heatmap_data_norm.png",width=4000,height = 4000,res=600)
 heatmap(as.matrix(dados_norm[,-1]))
 dev.off()
-
+colnames(dados_norm)
 
 names(tail(sort(colSums(is.na(dados_norm))/nrow(dados_norm)),10))->exclude_20
 
