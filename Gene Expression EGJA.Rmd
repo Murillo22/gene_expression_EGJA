@@ -17,18 +17,21 @@ h2 {
 ```{r setup, include=FALSE}
 
 renv::init()
-renv::install(c('dplyr','tidyverse','EnvStats'))
+renv::install(c('dplyr','tidyverse','EnvStats','readxl',
+                'gtsummary',"coin", "rstatix",'cardx'))
 ```
 
-# Calling packages and reading input files
+# 1. Calling packages and reading input files
 
-## Calling Required Packages
+## 1.1. Calling Required Packages
 
 
 ```{r warning=FALSE, message=FALSE}
 library(dplyr)
 library(tidyverse)
 library(EnvStats)
+library(readxl)
+library(gtsummary)
 
 ```
 
@@ -37,7 +40,7 @@ library(EnvStats)
 ```{r }
 
 ```
-## Reading data files
+## 1.2. Reading data files
 
 This analysis started with two files. The first one including expression data obtained using the Fluidigm System and the second one including clinical information from these patients. All files can be found in the 'Input files' folder.
 
@@ -53,17 +56,60 @@ expr_data<-expr_data%>%dplyr::filter(!(Name %in% c("PC 8","PC 9","PC 14",
 #Formatting all expression values as numeric data
 as.numeric(expr_data$Value)->expr_data$Value
 
+#Loading clinical data
+read_excel("Input files/Database EGJA.xlsx",sheet="R")->clinic_data
+
+#Filtering data with available gene expression
+#sort(table(c(unique(expr_data$Name),
+#        unique(clinic_data$Name))))
+
+
 ```
 <br> <br>
 ```{r }
 
 ```
-# Gene Expression Normalization
+___
+# 2. Clinical Profile
 
-## Subsetting housekeeping genes and showing expression levels
+## 2.1. Summary Table
 
-In this step, we separated data from housekeeping genes in this analysis: A (ACTB), B (B2M), C(GAPDH), D(GUSB), E(HPRT1), F(RPLP0), and G(TFRC).
-According with an in-parallel analysis ran in [NormFinder](https://www.moma.dk/software/normfinder) through [dXpress app](https://rdcu.be/dpQtN), genes 'A' (ACTB) and 'E' (HPRT1) were the most relevant to normalize data. In this plot, their combination is shown as 'norm'
+We included **`r nrow(clinic_data)` patients** in this study. Below, we represent the summary statistics.
+
+```{r }
+
+clinic_data%>%
+  mutate(Sex=ifelse(Sex==1,"M","F"),
+         cTNM=ifelse(cTNM<3,"1+2","3+4"))%>%
+  tbl_summary(      
+    statistic = list(
+      all_continuous() ~ "{mean} ({min}-{max})",
+      all_categorical() ~ "{n} / {N} ({p}%)"
+    ),
+    digits = all_continuous() ~ 2,
+    include = c("Age","Sex","cTNM", "OS"),
+    by="Localization",
+    missing = "no",
+    label = list(OS ~ "Overall Survival (months)")
+  ) |>
+  add_overall() |> 
+  add_n() |> # add column with total number of non-missing observations
+  add_p() |> # test for a difference between groups
+  modify_header(label = "**Variable**") |> # update the column header
+  bold_labels() 
+```
+
+<br> <br>
+```{r }
+
+```
+---
+# 3. Gene Expression Normalization
+
+## 3.1. Subsetting housekeeping genes and showing expression levels
+
+In this step, we separated data from housekeeping genes in this analysis: A (*ACTB*), B (*B2M*), C(*GAPDH*), D(*GUSB*), E(*HPRT1*), F(*RPLP0*), and G(*TFRC*).
+According with an in-parallel analysis ran in [NormFinder](https://www.moma.dk/software/normfinder) through [dXpress app](https://rdcu.be/dpQtN), genes 'A' (*ACTB*) and 'E' (*HPRT1*) were the most relevant to normalize data. In this plot, their combination is shown as 'norm'
 
 ```{r message=FALSE, warning=FALSE}
 expr_data<-expr_data%>%dplyr::select(-ID)
@@ -94,8 +140,8 @@ knitr::include_graphics("Results/Housekeeping Profile.png")
 ```{r }
 
 ```
-## Normalizing the expression of Target Genes
-Herein, we will normalize Ct values using 'A' (ACTB) and 'E' (HPRT1) genes.
+## 3.2. Normalizing the expression of Target Genes
+Herein, we will normalize Ct values using 'A' (*ACTB*) and 'E' (*HPRT1*) genes. 
 
 
 ```{r }
@@ -119,7 +165,7 @@ png("Results/heatmap_data_norm.png",width=4000,height = 4000,res=600)
 heatmap(as.matrix(norm_data[,-1]))
 dev.off()
 ```
-In this moment, we have expression data of  **`r ncol(norm_data[,-1])` genes from  `r nrow(norm_data[,-1])` patients.**
+At this moment, we have expression data of  **`r ncol(norm_data[,-1])` genes from  `r nrow(norm_data[,-1])` patients.** Patient 3641 has no expression data with passed QC. Blank cells represent missing values.
 <br> 
 ```{r }
 
@@ -135,7 +181,7 @@ knitr::include_graphics("Results/heatmap_data_norm.png")
 ```{r }
 
 ```
-# Session Info 
+# 4. Session Info 
 
 Saving Session Info and R-env...
 
