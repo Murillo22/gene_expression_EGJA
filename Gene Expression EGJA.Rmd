@@ -28,6 +28,7 @@ h2 {
 
 
 ```{r warning=FALSE, message=FALSE}
+library(circlize)
 library(ComplexHeatmap)
 library(dendsort)
 library(dplyr)
@@ -232,12 +233,12 @@ heatmap(as.matrix(norm_data_pca[,-1]))
 
 ```
 ## 4.2. Principal Component Analysis (PCA)
-For this part, we seek to eliminate genes with low expression (cutoff: -5) and/or low variability (cutoff: 0.8).
+For this part, we seek to eliminate genes with low expression (cutoff: -8) and/or low variability (cutoff: 0.8).
 
 ```{r }
-# Filtering genes with low expression (-dCT < -5)
+# Filtering genes with low expression (-dCT < -8)
 expr_filtered <- norm_data_pca[,-1] %>%
-  select(where(~ mean(.x, na.rm = TRUE) > -5))
+  select(where(~ mean(.x, na.rm = TRUE) > -8))
 ```
 
 After this first filter, we retrieved data of  **`r ncol(expr_filtered)` genes from  `r nrow(expr_filtered)` patients.**
@@ -258,7 +259,7 @@ pca_result <- prcomp(expr_scaled, center = TRUE, scale. = TRUE)
 p<-fviz_eig(pca_result, addlabels = TRUE,ncp = 20) 
 ```
 
-Herein, we require 10 components to achieve over 75% of the explained variance.
+Herein, we require 10 components to achieve over 70% of the explained variance.
 
 ```{r }
 p
@@ -315,19 +316,29 @@ top_genes <- p$data %>%
 # Crear el dataframe para heatmap
 for_heat <- norm_data_pca %>%
   left_join(clinic_data, by = "Name") %>%
-  select(Name, Localization, all_of(top_genes))
+  select(Name, Localization, 
+         cT,pT,
+         all_of(top_genes))
 
-df <- for_heat[,-c(1:2)]
+df <- for_heat[,-c(1:4)]
 row_dend = dendsort(hclust(dist(t(df))))
 col_dend = dendsort(hclust(dist(df),"ward.D"))
 
 ha = HeatmapAnnotation(Localization = as.factor(for_heat[,2]),
+                       cT=for_heat[,3],
+                       pT=for_heat[,4],
                        col = list( Localization = c("Antrum"="yellow",
                                                     "Body"="red",
                                                     "Siewert I"="blue",
                                                     "Siewert II"="green",
                                                     "Siewert III"="purple",
-                                                    " "="grey80")))
+                                                    " "="grey80"),
+                                   cT = colorRamp2(c(min(for_heat[,3], na.rm=TRUE),
+                                                     max(for_heat[,3], na.rm=TRUE)),
+                                                   c("white", "#018571")),
+                                   pT = colorRamp2(c(min(for_heat[,4], na.rm=TRUE),
+                                                     max(for_heat[,4], na.rm=TRUE)),
+                                                   c("white", "#A6611A"))))
 
 
 p<-Heatmap(t(scale(df)), 
@@ -341,10 +352,67 @@ p<-Heatmap(t(scale(df)),
            #cluster_rows = row_dend, 
            #cluster_columns = col_dend,
            row_km=3,
-           column_km=3,
+           column_km=4,
            row_names_gp = gpar(fontsize = 10),
            top_annotation = ha,
            column_labels = c(rep("",nrow(expr_filtered))) #Remove col names
+)
+p
+
+
+```
+<br> <br>
+```{r }
+
+```
+## 4.4. Heatmap with relevant genes from Unsupervised Analysis (All samples)
+
+```{r fig.width=10, fig.height=4, fig.fullwidth=TRUE}
+
+
+# Crear el dataframe para heatmap
+for_heat <- norm_data %>%
+  left_join(clinic_data, by = "Name") %>%
+  select(Name, Localization, 
+         cT,pT,
+         all_of(top_genes))
+
+df <- for_heat[,-c(1:4)]
+row_dend = dendsort(hclust(dist(t(df))))
+col_dend = dendsort(hclust(dist(df),"ward.D"))
+
+ha = HeatmapAnnotation(Localization = as.factor(for_heat[,2]),
+                       cT=for_heat[,3],
+                       pT=for_heat[,4],
+                       col = list( Localization = c("Antrum"="yellow",
+                                                    "Body"="red",
+                                                    "Siewert I"="blue",
+                                                    "Siewert II"="green",
+                                                    "Siewert III"="purple",
+                                                    " "="grey80"),
+                                   cT = colorRamp2(c(min(for_heat[,3], na.rm=TRUE),
+                                                     max(for_heat[,3], na.rm=TRUE)),
+                                                   c("white", "#018571")),
+                                   pT = colorRamp2(c(min(for_heat[,4], na.rm=TRUE),
+                                                     max(for_heat[,4], na.rm=TRUE)),
+                                                   c("white", "#A6611A"))))
+
+
+p<-Heatmap(t(scale(df)), 
+           name = "Level", #title of legend
+           column_title = "Samples", 
+           row_title = "Genes",
+           column_names_gp=gpar(fontsize=7),
+           #row_dend_side = "left", 
+           #row_split =factor(clinicos$SIEWERT.Antro.Corpo), 
+           #column_dend_side = "bottom",
+           #cluster_rows = row_dend, 
+           #cluster_columns = col_dend,
+           #row_km=3,
+           #column_km=3,
+           row_names_gp = gpar(fontsize = 10),
+           top_annotation = ha,
+           column_labels = c(rep("",nrow(norm_data))) #Remove col names
 )
 p
 
