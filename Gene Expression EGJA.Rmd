@@ -41,8 +41,9 @@ library(survminer)
 library(survivalAnalysis)
 library(tibble)
 library(tidyverse)
+library(patchwork)
 set.seed(1234)
-
+options(repos = BiocManager::repositories())
 ```
 </details> 
 
@@ -169,8 +170,7 @@ clinic_data%>%
 pluck_survival_analysis(result_srv,"p")->p_val
 
 # Plotting the graph
-png(paste0("Results/Results_KM_TODOS _GRUPOS.png"),width=3800,height = 3000,res=600)
-print(kaplan_meier_plot(result_srv,
+kaplan_meier_plot(result_srv,
                         break.time.by="breakByHalfYear",
                         xlab=".OS.months",
                         palette = c("Antrum"="gold",
@@ -187,7 +187,11 @@ print(kaplan_meier_plot(result_srv,
                         hazard.ratio=TRUE,
                         risk.table=TRUE,
                         table.layout="clean",
-                        ggtheme=ggplot2::theme_bw(10)))
+                        ggtheme=ggplot2::theme_bw(10))->km_plot_1
+
+png(paste0("Results/Results_KM_TODOS _GRUPOS.png"),width=3800,height = 3000,res=600)
+km_plot_1$plot / km_plot_1$table +
+  patchwork::plot_layout(heights = c(4, 1))
 dev.off()
 ```
 </details>
@@ -215,8 +219,8 @@ clinic_data%>%
 pluck_survival_analysis(result_srv,"p")->p_val
 
 # Plotting the graph
-png(paste0("Results/Results_KM_four_groups.png"),width=3800,height = 3000,res=600)
-print(kaplan_meier_plot(result_srv,
+
+kaplan_meier_plot(result_srv,
                         break.time.by="breakByHalfYear",
                         xlab=".OS.months",
                         palette = c("Body+Antrum"="#f76002",
@@ -232,7 +236,12 @@ print(kaplan_meier_plot(result_srv,
                         hazard.ratio=TRUE,
                         risk.table=TRUE,
                         table.layout="clean",
-                        ggtheme=ggplot2::theme_bw(10)))
+                        ggtheme=ggplot2::theme_bw(10))->km_plot_2
+png(paste0("Results/Results_KM_four_groups.png"),width=3800,height = 3000,res=600)
+
+
+km_plot_2$plot / km_plot_2$table +
+  patchwork::plot_layout(heights = c(4, 1))
 dev.off()
 
 ```
@@ -1296,8 +1305,8 @@ ___
 Saving Session Info and R-env...
 
 ```{r ses8, echo=FALSE, warning = FALSE, message=FALSE}
-renv::init()
-renv::snapshot()
+#renv::init()
+#renv::snapshot()
 sessioninfo::session_info() |> capture.output() |> writeLines("session-info.txt")
 
 ```
