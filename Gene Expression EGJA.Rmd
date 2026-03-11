@@ -1,7 +1,7 @@
 ---
 title: "Gene Expression EGJA"
 author: "Alexis Murillo (for C2PO)"
-date: "2025-05-05"
+date: "2026-03-11"
 output: 
   html_document:
     toc: true
@@ -1151,7 +1151,7 @@ resultado_finala%>%
 
 png(paste0("Results/RESULTADOS_EXP_exclusiva_Siewert_",thresh,"_TODAS AMOSTRAS.png"),
     width=5200,height = 2000,res=600)
-print(p)
+p
 dev.off()
 ```
 </details>
