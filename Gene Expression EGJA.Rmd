@@ -42,6 +42,7 @@ library(survivalAnalysis)
 library(tibble)
 library(tidyverse)
 library(patchwork)
+library(slickR)
 set.seed(1234)
 options(repos = BiocManager::repositories())
 ```
@@ -1231,13 +1232,22 @@ for(i in 1:length(lista_coef)){
       c(list_genes_selected,lista_coef[i])->list_genes_selected
       
       
-      png(paste0("Results/Transition Siewert/",lista_coef[i],".png"),width = 4000,height = 2000,res=600)
-      print(clinicos2%>%
-              filter(Gene==lista_coef[i])%>%
-              ggplot(aes(Values,Localization))+geom_boxplot(outlier.shape = NA)+
-              geom_jitter(alpha=.6,height = .15)+theme_bw()+
-              ylab("Localization")+xlab(paste0(lista_coef[i]," levels (-dCT)")))
-      dev.off()
+      p <- clinicos2 %>%
+    filter(Gene == lista_coef[i]) %>%
+    ggplot(aes(Values, Localization)) +
+    geom_boxplot(outlier.shape = NA) +
+    geom_jitter(alpha = .6, height = .15) +
+    theme_bw() +
+    ylab("Localization") +
+    xlab(paste0(lista_coef[i], " levels (-dCT)"))
+
+  ggsave(
+    filename = paste0("Results/Transition Siewert/", lista_coef[i], ".png"),
+    plot = p,
+    width = 5,
+    height = 2,
+    dpi = 600
+  )
     }
     
 
@@ -1292,6 +1302,15 @@ dev.off()
 
 knitr::include_graphics("Results/Heatmap_SiewertII.png")
 
+```
+<br> <br>
+
+Then, we can visualize individual boxplots per selected genes:
+<br> <br>
+
+
+```{r as7}
+slickR(list.files("Results/Transition Siewert", pattern="png", full.names=TRUE))
 ```
 
 <br> <br>
