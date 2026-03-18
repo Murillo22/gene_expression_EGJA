@@ -34,6 +34,7 @@ library(EnvStats)
 library(factoextra)
 library(ggplot2)
 library(ggpubr)
+library(purrr)
 library(gtsummary)
 library(readxl)
 library(scales)
@@ -43,6 +44,8 @@ library(tibble)
 library(tidyverse)
 library(patchwork)
 library(slickR)
+library(survival)
+library(broom)
 set.seed(1234)
 options(repos = BiocManager::repositories())
 ```
@@ -252,6 +255,85 @@ dev.off()
 
 knitr::include_graphics("Results/Results_KM_four_groups.png")
 
+```
+
+<br> <br>
+```{r sp3.1}
+
+```
+
+## 2.3. Survival Analysis (Clinical variables)
+
+Subsequently, we evaluated the HR for all variables. 
+
+<details>
+<summary style="background-color:#104E8B; color:white; padding:10px; border-radius:6px; cursor:pointer; font-weight:bold;">Hide/Show Code</summary>
+```{r surv2.3,message=F,warning=F}
+
+# Estimating NAs per variable
+na_prop <- colMeans(is.na(clinic_data))
+
+# Selecting variables with 20% (or less) missing
+vars_ok <- names(na_prop[na_prop <= 0.2])
+
+# Including outcome and time
+vars_ok <- unique(c(vars_ok, "OS", "Death"))
+
+data_filtered <- clinic_data %>%
+  select(all_of(vars_ok))
+
+# Defining outcome and time variables
+surv_obj <- Surv(time = data_filtered$OS, event = data_filtered$Death)
+
+# Excluding other variables
+exclude_vars <- c("No", "Name", "Birthdate", "SurgeryDate","DFSDate","Surgery", 
+                  "LastFolloupDate", "Recidive_Death_Date","LastStatus")
+
+candidate_vars <- setdiff(names(data_filtered), c("OS", "Death", exclude_vars))
+
+# Univariate Cox
+
+gsub(" ","_",colnames(data_filtered))->colnames(data_filtered)
+gsub(" ","_",candidate_vars)->candidate_vars
+
+data_model <- data_filtered %>%
+  select(all_of(candidate_vars),OS,Death)%>%
+  mutate(
+    Sex = as.factor(Sex),
+    LaurenType = as.factor(LaurenType),
+    Surgery_type = as.factor(Surgery_type),
+    cTNM_group = as.factor(cTNM_group),
+    Morbidities=as.factor(Morbidities),
+    Localization_number=as.factor(Localization_number),
+    Years_group	= as.factor(Years_group),
+    cT_group=as.factor(cT_group),
+    cN_group	=as.factor(cN_group),
+    Chemo_PRE = as.factor(Chemo_PRE),
+    Surgery_palliative	=as.factor(Surgery_palliative),
+    RessectionType=as.factor(RessectionType),
+    MacroType=as.factor(MacroType),
+    PalliativeChemo=as.factor(PalliativeChemo)
+  )
+
+tbl_uni <- tbl_uvregression(
+  data = data_model,
+  method = coxph,
+  y = Surv(OS, Death),
+  exponentiate = TRUE
+)
+
+tbl_uni_fmt <- tbl_uni %>%
+  bold_labels() %>%
+  add_global_p() %>%
+  modify_header(label = "**Variable**") %>%
+  modify_spanning_header(
+    c(estimate, conf.low, conf.high) ~ "**Hazard Ratio (95% CI)**"
+  )
+
+```
+</details>
+```{r surv2.3.vis,echo=FALSE }
+tbl_uni_fmt
 ```
 <br> <br>
 ```{r sp3.4}
