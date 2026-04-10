@@ -1,7 +1,7 @@
 ---
 title: "Gene Expression EGJA"
 author: "Alexis Murillo (for C2PO)"
-date: "2026-03-11"
+date: "2026-004-10"
 output: 
   html_document:
     toc: true
@@ -258,6 +258,120 @@ knitr::include_graphics("Results/Results_KM_four_groups.png")
 ```
 
 <br> <br>
+After, we grouped all samples accordingly to the **applied treatment**.
+
+<details>
+<summary style="background-color:#104E8B; color:white; padding:10px; border-radius:6px; cursor:pointer; font-weight:bold;">Hide/Show Code</summary>
+```{r surv2.2.treatment ,message=F,warning=F}
+
+# Creating object with survival info
+clinic_data%>%
+  mutate(RessectionType=ifelse(RessectionType==0,'Total Gastrectomy',
+                               ifelse(RessectionType==1,'Partial Gastrectomy',
+                                      ifelse(RessectionType==2,'Esophagectomy',
+                                             ifelse(RessectionType==3,'Palliative',NA)))))%>%
+  analyse_survival(vars(OS*30, Death), by='RessectionType') ->result_srv
+
+# Calling p-value
+pluck_survival_analysis(result_srv,"p")->p_val
+
+# Plotting the graph
+
+kaplan_meier_plot(result_srv,
+                        break.time.by="breakByHalfYear",
+                        xlab=".OS.months",
+                        legend.title="All groups",
+                        legend=c(.9,.75),
+                        pval.coord=c(-0.1,.15),
+                        pval.size=2.5,
+                        tables.height = 0.22,
+                        hazard.ratio=TRUE,
+                        risk.table=TRUE,
+                        table.layout="clean",
+                        ggtheme=ggplot2::theme_bw(10))->km_plot_3
+png(paste0("Results/Results_KM_Treatment.png"),width=3800,height = 3000,res=600)
+
+
+km_plot_3$plot / km_plot_3$table +
+  patchwork::plot_layout(heights = c(4, 1))
+dev.off()
+
+```
+</details>
+
+```{r surv2.2.4treat, echo=FALSE }
+
+knitr::include_graphics("Results/Results_KM_Treatment.png")
+
+```
+
+<br> <br>
+Then, we evaluated the distribution of Anatomical localizations regarding the applied ressection type:
+
+
+```{r surv2.2.restreatment ,message=F,warning=F}
+
+# Organizing data
+
+df <- clinic_data %>%
+  mutate(RessectionType = case_when(
+    RessectionType == 0 ~ "Total Gastrectomy",
+    RessectionType == 1 ~ "Partial Gastrectomy",
+    RessectionType == 2 ~ "Esophagectomy",
+    RessectionType == 3 ~ "Palliative",
+    TRUE ~ NA_character_
+  )) %>%
+  select(RessectionType, Localization)
+
+tab <- table(df$RessectionType, df$Localization)
+tab
+
+```
+```{r surv2.3.restreatment ,message=F,warning=F}
+## Applying chi-square
+
+chisq_test <- chisq.test(tab, simulate.p.value = TRUE)
+chisq_test
+```
+
+<details>
+<summary style="background-color:#104E8B; color:white; padding:10px; border-radius:6px; cursor:pointer; font-weight:bold;">Hide/Show Code</summary>
+```{r surv2.4.restreatment ,message=F,warning=F}
+## Generating plot
+
+df_plot <- as.data.frame(tab)
+colnames(df_plot) <- c("RessectionType", "Localization", "Count")
+df_plot$RessectionType<-factor(df_plot$RessectionType,
+                               levels=c("Palliative","Total Gastrectomy",
+                                        "Partial Gastrectomy","Esophagectomy"
+                                        ))
+df_plot$Localization<-factor(df_plot$Localization,
+                               levels=c("Siewert I","Siewert II","Siewert III",
+                                         "Antrum","Body"))
+ggplot(df_plot, aes(x = Localization, y = RessectionType, fill = Count)) +
+  geom_tile(color = "white") +
+  geom_text(aes(label = Count), size = 4) +
+  scale_fill_gradient(low = "white", high = "steelblue") +
+  theme_minimal() +
+  labs(
+    title = "",
+    subtitle = paste0("Chi-square p = ", signif(chisq_test$p.value, 3)),
+    x = "Localization",
+    y = "Resection Type",
+    fill = "Count"
+  ) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))->p
+png("Results/Panel_chisquare.png",width=3400,height = 2400,res=600)
+p
+dev.off()
+```
+</details>
+
+```{r surv2.2.4res_treat, echo=FALSE }
+
+knitr::include_graphics("Results/Panel_chisquare.png")
+
+```
 ```{r sp3.1}
 
 ```
