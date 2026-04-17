@@ -1455,9 +1455,19 @@ for(i in 1:length(lista_coef)){
 # Selecting data for relevant genes
 clinicos3<-DEA_data%>%
   filter(Localization %in% c("Siewert I","Siewert II","Siewert III" ))%>%
+  mutate(`IL18*STAT3/CDH5`=IL18+STAT3-CDH5/2)%>%
   select(Name,Localization,
-         all_of(list_genes_selected[-1]))
+         all_of(c(list_genes_selected[-1],'IL18*STAT3/CDH5')))
 
+clinicos3%>%
+  left_join(clinic_data%>%
+              mutate(RessectionType = case_when(
+    RessectionType == 0 ~ "Total Gastrectomy",
+    RessectionType == 1 ~ "Partial Gastrectomy",
+    RessectionType == 2 ~ "Esophagectomy",
+    RessectionType == 3 ~ "Palliative",
+    TRUE ~ NA_character_
+  ))%>%dplyr::select(Name,RessectionType),'Name')->clinica_tto
 # Plotting the heatmap
 df <- scale(clinicos3[,-c(1:2)])
 row_dend = dendsort(hclust(dist(t(df))))
@@ -1465,12 +1475,18 @@ col_dend = dendsort(hclust(dist(df)))
 
 
 ha = HeatmapAnnotation(Localization = as.factor(clinicos3[,2]),
+                       Treatment = as.factor(clinica_tto$RessectionType),
                        col = list( Localization = c("Antrum"="yellow",
                                              "Body"="red",
                                              "Siewert I"="blue",
                                              "Siewert II"="green",
                                              "Siewert III"="purple",
-                                             " "="grey")))
+                                             " "="grey"),
+                                   Treatment= c("Esophagectomy"="#F8766D",
+                                                "Palliative"="#7CAE00",
+                                                "Partial Gastrectomy"="#00BFC4")
+                                   
+))
 
 
 p<-Heatmap(t(df), 
@@ -1487,7 +1503,7 @@ p<-Heatmap(t(df),
 )
 
 
-png("Results/Heatmap_SiewertII.png",width = 4000,height = 2000,res=600)
+png("Results/Heatmap_SiewertII.png",width = 4600,height = 2200,res=600)
 p
 dev.off()
 
