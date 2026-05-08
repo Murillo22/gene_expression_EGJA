@@ -1169,12 +1169,22 @@ final_KW[c('STAT3','PI3','EGFR','VEGFA','SOD2','SLPI',
 
 # Running a corrplot
 
-corrplot(as.matrix(-1*log10(t(final_KW))),
-         p.mat = as.matrix(t(final_KW)),insig = "blank",
-         #cl.lim=c(0,10),
-         is.corr = FALSE,col = COL2('BrBG', 5),
-         tl.col = 'black',tl.srt = 60,title = "Kruskal-Wallis post hoc Bonferroni p-values (-log10)",
-         mar = c(1, 1, 5, 1))
+corrplot(
+  as.matrix(-1 * log10(t(final_KW))),
+  p.mat = as.matrix(t(final_KW)),
+  insig = "blank",
+  is.corr = FALSE,
+  
+  # Removing the white/yellow center from RdYlBu
+  col = colorRampPalette(
+    RColorBrewer::brewer.pal(11, "RdYlBu")[c(1:5, 7:11)]
+  )(100),
+  
+  tl.col = "black",
+  tl.srt = 60,
+  title = "Kruskal-Wallis post hoc Bonferroni p-values (-log10)",
+  mar = c(1, 1, 5, 1)
+)
 
 ```
 <br>
@@ -1503,7 +1513,7 @@ p<-Heatmap(t(df),
 )
 
 
-png("Results/Heatmap_SiewertII.png",width = 4600,height = 2200,res=600)
+png("Results/Heatmap_SiewertII.png",width = 5000,height = 2200,res=600)
 p
 dev.off()
 

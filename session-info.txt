@@ -8,8 +8,8 @@
  collate  Portuguese_Brazil.utf8
  ctype    Portuguese_Brazil.utf8
  tz       America/Sao_Paulo
- date     2026-04-17
- pandoc   3.6.3 @ C:/Users/alexis.carrasco/AppData/Local/Programs/RStudio/resources/app/bin/quarto/bin/tools/ (via rmarkdown)
+ date     2026-05-08
+ pandoc   3.8.3 @ C:/Users/alexis.carrasco/AppData/Local/Programs/RStudio/resources/app/bin/quarto/bin/tools/ (via rmarkdown)
  quarto   NA @ C:\\Users\\ALEXIS~1.CAR\\AppData\\Local\\Programs\\RStudio\\RESOUR~1\\app\\bin\\quarto\\bin\\quarto.exe
 
 ─ Packages ───────────────────────────────────────────────────────────────────
