@@ -1465,7 +1465,7 @@ for(i in 1:length(lista_coef)){
 # Selecting data for relevant genes
 clinicos3<-DEA_data%>%
   filter(Localization %in% c("Siewert I","Siewert II","Siewert III" ))%>%
-  mutate(`IL18*STAT3/CDH5`=IL18+STAT3-CDH5/2)%>%
+  mutate(`IL18*STAT3/CDH5`=IL18+STAT3-CDH5)%>%
   select(Name,Localization,
          all_of(c(list_genes_selected[-1],'IL18*STAT3/CDH5')))
 
@@ -1534,9 +1534,141 @@ Then, we can visualize individual boxplots per selected genes:
 ```{r as7}
 slickR(list.files("Results/Transition Siewert", pattern="png", full.names=TRUE))
 ```
-
 <br> <br>
-```{r sp19}
+Finally, we can evaluate the impact of this score in the prognosis of these patients.
+<br> <br>
+```{r sp19, message=F,warning=F}
+# Creating object with survival info
+clinic_data%>%
+  full_join(norm_data,by='Name')%>%
+  select(Name,OS,Localization,RessectionType,Death,IL18,STAT3,CDH5)%>%
+  mutate(score=IL18+STAT3-CDH5,
+    
+    # Classifying according to the score median
+    score_group = ifelse(
+      score >= median(score, na.rm = TRUE),
+      "High",
+      "Low"
+    )
+  ) %>%
+  filter(Localization %in% c("Siewert I", "Siewert II", "Siewert III")) %>%
+  analyse_survival(vars(OS*30, Death), by='score_group') ->result_srv
+
+# Calling p-value
+pluck_survival_analysis(result_srv,"p")->p_val
+
+# Plotting the graph
+kaplan_meier_plot(result_srv,
+                        break.time.by="breakByHalfYear",
+                        xlab=".OS.months",
+                        palette = c("High"="red",
+                                    "Low"="blue"),
+                        legend.title="All groups",
+                        legend=c(.9,.75),
+                        pval.coord=c(-0.1,.15),
+                        pval.size=2.5,
+                        tables.height = 0.22,
+                        hazard.ratio=TRUE,
+                        risk.table=TRUE,
+                        table.layout="clean",
+                        ggtheme=ggplot2::theme_bw(10))->km_plot_1
+km_plot_1
+
+png(paste0("Results/Results_KM_final.png"),width=3000,height = 2000,res=600)
+km_plot_1$plot / km_plot_1$table +
+  patchwork::plot_layout(heights = c(4, 1))
+dev.off()
+knitr::include_graphics("Results/Results_KM_final.png")
+
+# Preparing dataset
+clinic_data %>%
+  full_join(norm_data, by = "Name") %>%
+  select(Name,
+         OS,
+         Localization,
+         RessectionType,
+         Death,
+         IL18,
+         STAT3,
+         CDH5) %>%
+  
+  mutate(
+    score = IL18 + STAT3 - CDH5,
+    
+    # High vs Low score
+    score_group = ifelse(
+      score >= median(score, na.rm = TRUE),
+      "High",
+      "Low"
+    ),
+    
+    score_group = factor(score_group,
+                         levels = c("Low", "High")),
+    
+    Localization = factor(Localization),
+    RessectionType = factor(RessectionType)
+  ) %>%
+  
+  filter(Localization %in% c("Siewert I",
+                             "Siewert II",
+                             "Siewert III")) -> surv_data
+
+
+# Creating survival object
+surv_object <- Surv(
+  time  = surv_data$OS * 30,   # converting months to days
+  event = surv_data$Death
+)
+
+# Score group
+cox_score <- coxph(
+  surv_object ~ score_group,
+  data = surv_data
+)
+
+summary(cox_score)
+
+# Localization
+cox_loc <- coxph(
+  surv_object ~ Localization,
+  data = surv_data
+)
+
+summary(cox_loc)
+
+# Ressection type
+cox_res <- coxph(
+  surv_object ~ RessectionType,
+  data = surv_data
+)
+
+summary(cox_res)
+
+cox_multi <- coxph(
+  surv_object ~
+    score_group +
+    Localization +
+    RessectionType,
+  
+  data = surv_data
+)
+
+summary(cox_multi)
+
+tbl_uvregression(
+  method = coxph,
+  y = surv_object,
+  data = surv_data,
+  include = c(score_group,
+              Localization,
+              RessectionType),
+  exponentiate = TRUE
+)
+
+tbl_regression(
+  cox_multi,
+  exponentiate = TRUE
+)
 
 ```
 \newpage
