@@ -1,7 +1,7 @@
 ---
 title: "Gene Expression EGJA"
 author: "Alexis Murillo (for C2PO)"
-date: "2026-04-10"
+date: "2026-05-10"
 output: 
   html_document:
     toc: true
@@ -1177,7 +1177,7 @@ corrplot(
   
   # Removing the white/yellow center from RdYlBu
   col = colorRampPalette(
-    RColorBrewer::brewer.pal(11, "RdYlBu")[c(1:5, 7:11)]
+    RColorBrewer::brewer.pal(11, "RdYlBu")[c(7:11)]
   )(100),
   
   tl.col = "black",
